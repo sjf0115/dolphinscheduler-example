@@ -9,8 +9,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.data.example.bean.Project;
+import com.data.example.domain.Response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -48,7 +50,6 @@ public class DolphinSchedulerClient {
 
     // 初始化客户端
     public DolphinSchedulerClient() {
-
         // 配置连接池
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setMaxTotal(100);
@@ -78,15 +79,18 @@ public class DolphinSchedulerClient {
     }
 
     // 统一执行请求
-    private <T> T executeRequest(HttpUriRequest request, Class<T> responseType) {
-        try (CloseableHttpResponse response = httpClient.execute(request)) {
-            String content = EntityUtils.toString(response.getEntity());
+    private <T> Response<T> executeRequest(HttpUriRequest request, Class<T> responseType) {
+        try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
+            String responseContent = EntityUtils.toString(httpResponse.getEntity());
 
-            if (response.getCode() != HttpStatus.SC_OK) {
-                throw new DSApiException("API请求失败: " + content);
+            if (httpResponse.getCode() != HttpStatus.SC_OK) {
+                throw new DSApiException("API请求失败: " + responseContent);
             }
 
-            return mapper.readValue(content, responseType);
+            TypeReference<Response<T>> typeRef = new TypeReference<Response<T>>() {};
+            Response<T> response = mapper.readValue(responseContent, typeRef);
+
+            return response;
         } catch (IOException | ParseException e) {
             throw new DSApiException("请求执行异常", e);
         }
@@ -102,8 +106,8 @@ public class DolphinSchedulerClient {
 
             HttpGet httpGet = new HttpGet(uri);
             httpGet.setHeader("token", token);
-            Project project = executeWithRetry(httpGet, Project.class, 3);
-            System.out.println(project.getName());
+            Response<Project> response = executeWithRetry(httpGet, Project.class, 3);
+            Project project = response.getData();
         } catch (URISyntaxException e) {
             throw new DSApiException("构建请求失败", e);
         }
@@ -129,21 +133,21 @@ public class DolphinSchedulerClient {
 //    }
 
     // 启动作业实例
-    public ProcessInstance startWorkflow(String projectName, WorkflowExecuteRequest params) {
-        try {
-            URI uri = new URIBuilder(baseUrl)
-                    .appendPathSegments("projects", projectName, "executors", "start-process-instance")
-                    .build();
-
-            HttpPost httpPost = new HttpPost(uri);
-            httpPost.setHeader("token", token);
-            httpPost.setEntity(new StringEntity(mapper.writeValueAsString(params), ContentType.APPLICATION_JSON));
-
-            return executeRequest(httpPost, ProcessInstance.class);
-        } catch (URISyntaxException | JsonProcessingException e) {
-            throw new DSApiException("启动作业失败", e);
-        }
-    }
+//    public ProcessInstance startWorkflow(String projectName, WorkflowExecuteRequest params) {
+//        try {
+//            URI uri = new URIBuilder(baseUrl)
+//                    .appendPathSegments("projects", projectName, "executors", "start-process-instance")
+//                    .build();
+//
+//            HttpPost httpPost = new HttpPost(uri);
+//            httpPost.setHeader("token", token);
+//            httpPost.setEntity(new StringEntity(mapper.writeValueAsString(params), ContentType.APPLICATION_JSON));
+//
+//            return executeRequest(httpPost, ProcessInstance.class);
+//        } catch (URISyntaxException | JsonProcessingException e) {
+//            throw new DSApiException("启动作业失败", e);
+//        }
+//    }
 
     // 查询实例状态（带自动重试）
     public InstanceStatus getInstanceStatus(String projectName, int instanceId) {
@@ -156,14 +160,15 @@ public class DolphinSchedulerClient {
             HttpGet httpGet = new HttpGet(uri);
             httpGet.setHeader("token", token);
 
-            return executeWithRetry(httpGet, InstanceStatus.class, 3);
+            Response<InstanceStatus> response = executeWithRetry(httpGet, InstanceStatus.class, 3);
+            return response.getData();
         } catch (URISyntaxException e) {
             throw new DSApiException("构建请求失败", e);
         }
     }
 
     // 带重试机制的请求执行
-    private <T> T executeWithRetry(HttpUriRequest request, Class<T> type, int maxRetries) {
+    private <T> Response<T> executeWithRetry(HttpUriRequest request, Class<T> type, int maxRetries) {
         for (int i=0; i<maxRetries; i++) {
             try {
                 return executeRequest(request, type);
