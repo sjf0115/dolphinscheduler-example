@@ -61,10 +61,24 @@ public class WorkflowController {
         return ResponseEntity.ok(workflowService.createWorkflow(request));
     }
 
-    /**
-     * 更新工作流
-     * PUT /api/workflow/{workflowCode}
-     */
+    // 查询所有工作流定义列表（分页 + 搜索）
+    @GetMapping
+    public ResponseEntity<DolphinSchedulerResponse<?>> listWorkflows(
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String searchVal) throws IOException {
+        log.info("请求查询工作流列表: pageNo={}, pageSize={}, searchVal={}", pageNo, pageSize, searchVal);
+        return ResponseEntity.ok(workflowService.listWorkflows(pageNo, pageSize, searchVal));
+    }
+
+    // 查询工作流详情
+    @GetMapping("/{workflowCode}")
+    public ResponseEntity<DolphinSchedulerResponse<?>> getWorkflow(@PathVariable String workflowCode) throws IOException {
+        log.info("请求查询工作流详情：{}", workflowCode);
+        return ResponseEntity.ok(workflowService.getWorkflow(workflowCode));
+    }
+
+    // 更新工作流
     @PutMapping("/{workflowCode}")
     public ResponseEntity<DolphinSchedulerResponse<?>> updateWorkflow(
             @PathVariable String workflowCode,
@@ -72,31 +86,14 @@ public class WorkflowController {
         return ResponseEntity.ok(workflowService.updateWorkflow(workflowCode, request));
     }
 
-    /**
-     * 查询工作流详情
-     * GET /api/workflow/{workflowCode}
-     */
-    @GetMapping("/{workflowCode}")
-    public ResponseEntity<DolphinSchedulerResponse<?>> getWorkflow(@PathVariable String workflowCode) throws IOException {
-        log.info("请求查询工作流详情：{}", workflowCode);
-        return ResponseEntity.ok(workflowService.getWorkflow(workflowCode));
-    }
-
-    /**
-     * 删除工作流（需先下线）
-     * DELETE /api/workflow/{workflowCode}
-     */
+    // 删除工作流（需先下线）
     @DeleteMapping("/{workflowCode}")
     public ResponseEntity<DolphinSchedulerResponse<?>> deleteWorkflow(@PathVariable String workflowCode) throws IOException {
+        log.info("请求删除 [{}] 工作流", workflowCode);
         return ResponseEntity.ok(workflowService.deleteWorkflow(workflowCode));
     }
 
-    // ==================== 上线/下线 ====================
-
-    /**
-     * 上线工作流
-     * POST /api/workflow/{workflowCode}/online
-     */
+    // 上线工作流
     @PostMapping("/{workflowCode}/online")
     public ResponseEntity<DolphinSchedulerResponse<?>> onlineWorkflow(@PathVariable String workflowCode,
             @RequestParam String name) throws IOException {
@@ -104,10 +101,7 @@ public class WorkflowController {
         return ResponseEntity.ok(workflowService.onlineWorkflow(workflowCode, name));
     }
 
-    /**
-     * 下线工作流
-     * POST /api/workflow/{workflowCode}/offline
-     */
+    // 下线工作流
     @PostMapping("/{workflowCode}/offline")
     public ResponseEntity<DolphinSchedulerResponse<?>> offlineWorkflow(@PathVariable String workflowCode,
             @RequestParam String name) throws IOException {
@@ -125,40 +119,5 @@ public class WorkflowController {
     public ResponseEntity<DolphinSchedulerResponse<?>> triggerWorkflow(
             @PathVariable String workflowCode) throws IOException {
         return ResponseEntity.ok(workflowService.triggerWorkflow(workflowCode));
-    }
-
-
-
-    // ==================== 复合操作 ====================
-
-    /**
-     * 一键发布工作流：创建 → 上线 → 创建调度 → 上线调度
-     * POST /api/workflow/deploy?cron=0+0+2+*+*+%3F+*
-     */
-    @PostMapping("/deploy")
-    public ResponseEntity<DolphinSchedulerResponse<?>> deployWorkflow(
-            @RequestBody WorkflowRequest request,
-            @RequestParam(required = false) String cron) throws IOException {
-        return ResponseEntity.ok(workflowService.deployWorkflow(request, cron));
-    }
-
-    // ==================== 辅助接口 ====================
-
-    /**
-     * 生成 Task Code（创建任务前必须先调用）
-     * GET /api/workflow/gen-task-codes?genNum=2
-     */
-    @GetMapping("/gen-task-codes")
-    public ResponseEntity<DolphinSchedulerResponse<?>> genTaskCodes(@RequestParam(defaultValue = "1") int genNum) throws IOException {
-        return ResponseEntity.ok(workflowService.genTaskCodes(genNum));
-    }
-
-    /**
-     * 测试 DolphinScheduler 连通性
-     * GET /api/workflow/health
-     */
-    @GetMapping("/health")
-    public ResponseEntity<DolphinSchedulerResponse<?>> healthCheck() throws IOException {
-        return ResponseEntity.ok(workflowService.healthCheck());
     }
 }

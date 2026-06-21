@@ -60,6 +60,43 @@ public class DolphinSchedulerApiClient {
     }
 
     /**
+     * 查询工作流定义列表
+     * GET /projects/{projectCode}/process-definition?pageNo=1&pageSize=10&searchVal=
+     */
+    public String listWorkflows(int pageNo, int pageSize, String searchVal) throws IOException {
+        StringBuilder url = new StringBuilder(apiUrl + "/projects/" + projectCode + "/process-definition");
+        url.append("?pageNo=").append(pageNo);
+        url.append("&pageSize=").append(pageSize);
+        if (searchVal != null && !searchVal.isEmpty()) {
+            url.append("&searchVal=").append(searchVal);
+        }
+        return doGet(url.toString());
+    }
+
+    /**
+     * 手动触发工作流执行。
+     * POST /projects/{projectCode}/executors/start-process-instance
+     */
+    public String triggerWorkflow(String workflowCode) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/executors/start-process-instance";
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("processDefinitionCode", workflowCode);
+        params.put("scheduleTime", "[]");
+        params.put("failureStrategy", "CONTINUE");
+        params.put("warningType", "NONE");
+        params.put("warningGroupId", "0");
+        params.put("processInstancePriority", "MEDIUM");
+        params.put("runMode", "RUN_MODE_SERIAL");
+        return doPostForm(url, params);
+    }
+
+    /** 查询工作流详情 */
+    public String workflowDetail(String workflowCode) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
+        return doGet(url);
+    }
+
+    /**
      * 更新工作流定义。
      * PUT /projects/{projectCode}/process-definition/{code}
      */
@@ -94,7 +131,7 @@ public class DolphinSchedulerApiClient {
     }
 
     /**
-     * 下线工作流定义。
+     * 下线工作流定义。相应的调度也会下线
      * POST /projects/{projectCode}/process-definition/{code}/release
      */
     public String offlineWorkflow(String workflowCode, String workflowName) throws IOException {
@@ -163,29 +200,58 @@ public class DolphinSchedulerApiClient {
     }
 
     //------------------------------------------------------------------------------------------------------------------
+    // 工作流实例（Process Instance）
 
     /**
-     * 手动触发工作流执行。
-     * POST /projects/{projectCode}/executors/start-process-instance
+     * 查询工作流实例列表
+     * GET /projects/{projectCode}/process-instances?pageNo=1&pageSize=10&searchVal=&stateType=
      */
-    public String triggerWorkflow(String workflowCode) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/executors/start-process-instance";
-        Map<String, String> params = new java.util.LinkedHashMap<>();
-        params.put("processDefinitionCode", workflowCode);
-        params.put("scheduleTime", "[]");
-        params.put("failureStrategy", "CONTINUE");
-        params.put("warningType", "NONE");
-        params.put("warningGroupId", "0");
-        params.put("processInstancePriority", "MEDIUM");
-        params.put("runMode", "RUN_MODE_SERIAL");
+    public String listProcessInstances(int pageNo, int pageSize, String searchVal, String stateType) throws IOException {
+        StringBuilder url = new StringBuilder(apiUrl + "/projects/" + projectCode + "/process-instances");
+        url.append("?pageNo=").append(pageNo);
+        url.append("&pageSize=").append(pageSize);
+        if (searchVal != null && !searchVal.isEmpty()) {
+            url.append("&searchVal=").append(searchVal);
+        }
+        if (stateType != null && !stateType.isEmpty()) {
+            url.append("&stateType=").append(stateType);
+        }
+        return doGet(url.toString());
+    }
+
+    /**
+     * 查询工作流实例详情
+     * GET /projects/{projectCode}/process-instances/{id}
+     */
+    public String processInstanceDetail(int instanceId) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-instances/" + instanceId;
+        return doGet(url);
+    }
+
+    /**
+     * 操作工作流实例（停止、恢复、暂停等）
+     * POST /projects/{projectCode}/executors/execute
+     * executeType: STOP / RECOVER_TOLERANCE / RECOVER_SUSPEND / PAUSE 等
+     */
+    public String executeProcessInstance(int instanceId, String executeType) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/executors/execute";
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("processInstanceId", String.valueOf(instanceId));
+        params.put("executeType", executeType);
         return doPostForm(url, params);
     }
 
-    /** 查询工作流 */
-    public String getWorkflow(String workflowCode) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
-        return doGet(url);
+    /**
+     * 删除工作流实例
+     * DELETE /projects/{projectCode}/process-instances/{id}
+     */
+    public String deleteProcessInstance(int instanceId) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-instances/" + instanceId;
+        return doDelete(url);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Task & 其他
 
     /**
      * 生成 Task Code。
