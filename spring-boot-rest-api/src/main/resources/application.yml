@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+dolphinscheduler:
+  api:
+    base-url: http://localhost:12345/dolphinscheduler
+    token: 2414ea93cbc65f55497da84a1e1b1973
+    project-code: 22012166559808
+    tenant-code: default
+    connect-timeout: 5000
+    read-timeout: 30000
+    max-total-connections: 200
+    max-per-route: 50
