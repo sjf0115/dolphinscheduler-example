@@ -1,6 +1,8 @@
 package com.data.example.controller;
 
 import com.data.example.bean.DolphinSchedulerResponse;
+import com.data.example.bean.PageInfo;
+import com.data.example.bean.ProcessInstance;
 import com.data.example.service.WorkflowInstanceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +32,7 @@ public class WorkflowInstanceController {
      * GET /api/workflow/instances?pageNo=1&pageSize=10&stateType=RUNNING
      */
     @GetMapping
-    public ResponseEntity<DolphinSchedulerResponse<?>> listProcessInstances(
+    public ResponseEntity<DolphinSchedulerResponse<PageInfo<ProcessInstance>>> listProcessInstances(
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String searchVal,
@@ -44,7 +46,7 @@ public class WorkflowInstanceController {
      * GET /api/workflow/instances/{instanceId}
      */
     @GetMapping("/{instanceId}")
-    public ResponseEntity<DolphinSchedulerResponse<?>> getProcessInstance(
+    public ResponseEntity<DolphinSchedulerResponse<ProcessInstance>> getProcessInstance(
             @PathVariable int instanceId) throws IOException {
         log.info("请求查询工作流实例详情: instanceId={}", instanceId);
         return ResponseEntity.ok(instanceService.getProcessInstance(instanceId));
@@ -55,7 +57,7 @@ public class WorkflowInstanceController {
      * POST /api/workflow/instances/{instanceId}/stop
      */
     @PostMapping("/{instanceId}/stop")
-    public ResponseEntity<DolphinSchedulerResponse<?>> stopProcessInstance(
+    public ResponseEntity<DolphinSchedulerResponse<Void>> stopProcessInstance(
             @PathVariable int instanceId) throws IOException {
         log.info("请求停止工作流实例: instanceId={}", instanceId);
         return ResponseEntity.ok(instanceService.stopProcessInstance(instanceId));
@@ -66,7 +68,7 @@ public class WorkflowInstanceController {
      * POST /api/workflow/instances/{instanceId}/recover
      */
     @PostMapping("/{instanceId}/recover")
-    public ResponseEntity<DolphinSchedulerResponse<?>> recoverProcessInstance(
+    public ResponseEntity<DolphinSchedulerResponse<Void>> recoverProcessInstance(
             @PathVariable int instanceId) throws IOException {
         log.info("请求恢复工作流实例: instanceId={}", instanceId);
         return ResponseEntity.ok(instanceService.recoverProcessInstance(instanceId));
@@ -77,7 +79,7 @@ public class WorkflowInstanceController {
      * POST /api/workflow/instances/{instanceId}/pause
      */
     @PostMapping("/{instanceId}/pause")
-    public ResponseEntity<DolphinSchedulerResponse<?>> pauseProcessInstance(
+    public ResponseEntity<DolphinSchedulerResponse<Void>> pauseProcessInstance(
             @PathVariable int instanceId) throws IOException {
         log.info("请求暂停工作流实例: instanceId={}", instanceId);
         return ResponseEntity.ok(instanceService.pauseProcessInstance(instanceId));
@@ -88,7 +90,7 @@ public class WorkflowInstanceController {
      * DELETE /api/workflow/instances/{instanceId}
      */
     @DeleteMapping("/{instanceId}")
-    public ResponseEntity<DolphinSchedulerResponse<?>> deleteProcessInstance(
+    public ResponseEntity<DolphinSchedulerResponse<Void>> deleteProcessInstance(
             @PathVariable int instanceId) throws IOException {
         log.info("请求删除工作流实例: instanceId={}", instanceId);
         return ResponseEntity.ok(instanceService.deleteProcessInstance(instanceId));

@@ -1,7 +1,7 @@
 package com.data.example.client;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.data.example.bean.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -15,6 +15,8 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.*;
 
+import static com.data.example.utils.CommonUtil.parseResponse;
+
 /**
  * DolphinScheduler OpenAPI 封装。
  *
@@ -26,7 +28,29 @@ import java.util.*;
 @Slf4j
 public class DolphinSchedulerApiClient {
 
-    private static final Gson gson = new GsonBuilder().create();
+    // ==================== 泛型 TypeReference 常量 ====================
+    private static final TypeReference<DolphinSchedulerResponse<ProcessDefinition>> RESP_PROCESS_DEF =
+            new TypeReference<DolphinSchedulerResponse<ProcessDefinition>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<ProcessDefinitionDetail>> RESP_PROCESS_DEF_DETAIL =
+            new TypeReference<DolphinSchedulerResponse<ProcessDefinitionDetail>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<PageInfo<ProcessDefinition>>> RESP_PAGE_PROCESS_DEF =
+            new TypeReference<DolphinSchedulerResponse<PageInfo<ProcessDefinition>>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<Void>> RESP_VOID =
+            new TypeReference<DolphinSchedulerResponse<Void>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<Integer>> RESP_INT =
+            new TypeReference<DolphinSchedulerResponse<Integer>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<Schedule>> RESP_SCHEDULE =
+            new TypeReference<DolphinSchedulerResponse<Schedule>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<List<Schedule>>> RESP_SCHEDULE_LIST =
+            new TypeReference<DolphinSchedulerResponse<List<Schedule>>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<PageInfo<ProcessInstance>>> RESP_PAGE_PROCESS_INST =
+            new TypeReference<DolphinSchedulerResponse<PageInfo<ProcessInstance>>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<ProcessInstance>> RESP_PROCESS_INST =
+            new TypeReference<DolphinSchedulerResponse<ProcessInstance>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<List<Long>>> RESP_LONG_LIST =
+            new TypeReference<DolphinSchedulerResponse<List<Long>>>() {};
+    private static final TypeReference<DolphinSchedulerResponse<Map<String, Object>>> RESP_MAP =
+            new TypeReference<DolphinSchedulerResponse<Map<String, Object>>>() {};
 
     private String apiUrl;
     private String token;
@@ -44,42 +68,44 @@ public class DolphinSchedulerApiClient {
         }
         log.info("DolphinSchedulerApiClient 初始化: apiUrl={}, projectCode={}, tenantCode={}", apiUrl, projectCode, tenantCode);
     }
-    
+
+    //------------------------------------------------------------------------------------------------------------------
+    // 1. 工作流定义
+
     /**
-     * 创建工作流定义。
+     * 创建工作流定义
      * POST /projects/{projectCode}/process-definition
      */
-    public String createWorkflow(Map<String, String> params) throws IOException {
+    public DolphinSchedulerResponse<ProcessDefinition> createWorkflow(Map<String, String> params) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-definition";
-        // 补充必填参数
         params.putIfAbsent("tenantCode", tenantCode);
         params.putIfAbsent("locations", "[]");
         params.putIfAbsent("globalParams", "[]");
         params.putIfAbsent("timeout", "0");
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_PROCESS_DEF);
     }
 
     /**
      * 查询工作流定义列表
      * GET /projects/{projectCode}/process-definition?pageNo=1&pageSize=10&searchVal=
      */
-    public String listWorkflows(int pageNo, int pageSize, String searchVal) throws IOException {
+    public DolphinSchedulerResponse<PageInfo<ProcessDefinition>> listWorkflows(int pageNo, int pageSize, String searchVal) throws IOException {
         StringBuilder url = new StringBuilder(apiUrl + "/projects/" + projectCode + "/process-definition");
         url.append("?pageNo=").append(pageNo);
         url.append("&pageSize=").append(pageSize);
         if (searchVal != null && !searchVal.isEmpty()) {
             url.append("&searchVal=").append(searchVal);
         }
-        return doGet(url.toString());
+        return parseResponse(doGet(url.toString()), RESP_PAGE_PROCESS_DEF);
     }
 
     /**
-     * 手动触发工作流执行。
+     * 手动触发工作流执行
      * POST /projects/{projectCode}/executors/start-process-instance
      */
-    public String triggerWorkflow(String workflowCode) throws IOException {
+    public DolphinSchedulerResponse<Integer> triggerWorkflow(String workflowCode) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/executors/start-process-instance";
-        Map<String, String> params = new java.util.LinkedHashMap<>();
+        Map<String, String> params = new LinkedHashMap<>();
         params.put("processDefinitionCode", workflowCode);
         params.put("scheduleTime", "[]");
         params.put("failureStrategy", "CONTINUE");
@@ -87,126 +113,124 @@ public class DolphinSchedulerApiClient {
         params.put("warningGroupId", "0");
         params.put("processInstancePriority", "MEDIUM");
         params.put("runMode", "RUN_MODE_SERIAL");
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_INT);
     }
 
     /** 查询工作流详情 */
-    public String workflowDetail(String workflowCode) throws IOException {
+    public DolphinSchedulerResponse<ProcessDefinitionDetail> workflowDetail(String workflowCode) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
-        return doGet(url);
+        return parseResponse(doGet(url), RESP_PROCESS_DEF_DETAIL);
     }
 
     /**
-     * 更新工作流定义。
+     * 更新工作流定义
      * PUT /projects/{projectCode}/process-definition/{code}
      */
-    public String updateWorkflow(String workflowCode, Map<String, String> params) throws IOException {
+    public DolphinSchedulerResponse<Void> updateWorkflow(String workflowCode, Map<String, String> params) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
         params.putIfAbsent("tenantCode", tenantCode);
         params.putIfAbsent("locations", "[]");
         params.putIfAbsent("globalParams", "[]");
         params.putIfAbsent("timeout", "0");
-        return doPutForm(url, params);
+        return parseResponse(doPutForm(url, params), RESP_VOID);
     }
 
     /**
-     * 删除工作流定义。
+     * 删除工作流定义
      * DELETE /projects/{projectCode}/process-definition/{code}
      */
-    public String deleteWorkflow(String workflowCode) throws IOException {
+    public DolphinSchedulerResponse<Void> deleteWorkflow(String workflowCode) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
-        return doDelete(url);
+        return parseResponse(doDelete(url), RESP_VOID);
     }
 
     /**
-     * 发布（上线）工作流定义。
+     * 发布（上线）工作流定义
      * POST /projects/{projectCode}/process-definition/{code}/release
      */
-    public String onlineWorkflow(String workflowCode, String workflowName) throws IOException {
+    public DolphinSchedulerResponse<Void> onlineWorkflow(String workflowCode, String workflowName) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode + "/release";
         Map<String, String> params = new HashMap<>();
         params.put("name", workflowName);
         params.put("releaseState", "ONLINE");
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_VOID);
     }
 
     /**
-     * 下线工作流定义。相应的调度也会下线
+     * 下线工作流定义（相应的调度也会下线）
      * POST /projects/{projectCode}/process-definition/{code}/release
      */
-    public String offlineWorkflow(String workflowCode, String workflowName) throws IOException {
+    public DolphinSchedulerResponse<Void> offlineWorkflow(String workflowCode, String workflowName) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode + "/release";
         Map<String, String> params = new HashMap<>();
         params.put("name", workflowName);
         params.put("releaseState", "OFFLINE");
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_VOID);
     }
 
     //------------------------------------------------------------------------------------------------------------------
+    // 2. 调度
 
     /**
-     * 创建定时调度。
+     * 创建定时调度
      * POST /projects/{projectCode}/schedules
-     * 参数：processDefinitionCode, schedule (cron JSON)
      */
-    public String createSchedule(String workflowCode, String scheduleJson) throws IOException {
+    public DolphinSchedulerResponse<Schedule> createSchedule(String workflowCode, String scheduleJson) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules";
-        Map<String, String> params = new java.util.LinkedHashMap<>();
-        // 必填参数
+        Map<String, String> params = new LinkedHashMap<>();
         params.put("processDefinitionCode", workflowCode);
         params.put("schedule", scheduleJson);
         params.put("warningType", "NONE");
         params.put("warningGroupId", "0");
         params.put("failureStrategy", "CONTINUE");
         params.put("processInstancePriority", "MEDIUM");
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_SCHEDULE);
     }
 
     /**
-     * 所有调度。
+     * 查询所有调度
      * POST /projects/{projectCode}/schedules/list
-     * 参数：processDefinitionCode, schedule (cron JSON)
      */
-    public String listSchedules() throws IOException {
+    public DolphinSchedulerResponse<List<Schedule>> listSchedules() throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules/list";
-        return doPostForm(url, new HashMap<>());
+        return parseResponse(doPostForm(url, new HashMap<>()), RESP_SCHEDULE_LIST);
     }
 
     /**
-     * 上线调度。
+     * 上线调度
      * POST /projects/{projectCode}/schedules/{id}/online
      */
-    public String onlineSchedule(String scheduleId) throws IOException {
+    public DolphinSchedulerResponse<Void> onlineSchedule(String scheduleId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules/" + scheduleId + "/online";
-        return doPostForm(url, new HashMap<>());
+        return parseResponse(doPostForm(url, new HashMap<>()), RESP_VOID);
     }
 
     /**
-     * 下线调度。
+     * 下线调度
      * POST /projects/{projectCode}/schedules/{id}/offline
      */
-    public String offlineSchedule(String scheduleId) throws IOException {
+    public DolphinSchedulerResponse<Void> offlineSchedule(String scheduleId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules/" + scheduleId + "/offline";
-        return doPostForm(url, new HashMap<>());
+        return parseResponse(doPostForm(url, new HashMap<>()), RESP_VOID);
     }
 
     /**
      * 删除调度
-     * POST /projects/{projectCode}/schedules/{id}/offline
+     * DELETE /projects/{projectCode}/schedules/{id}
      */
-    public String deleteSchedule(String scheduleId) throws IOException {
+    public DolphinSchedulerResponse<Void> deleteSchedule(String scheduleId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules/" + scheduleId;
-        return doDelete(url);
+        return parseResponse(doDelete(url), RESP_VOID);
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // 工作流实例（Process Instance）
+    // 3. 工作流实例（Process Instance）
 
     /**
      * 查询工作流实例列表
      * GET /projects/{projectCode}/process-instances?pageNo=1&pageSize=10&searchVal=&stateType=
      */
-    public String listProcessInstances(int pageNo, int pageSize, String searchVal, String stateType) throws IOException {
+    public DolphinSchedulerResponse<PageInfo<ProcessInstance>> listProcessInstances(int pageNo, int pageSize, String searchVal, String stateType) throws IOException {
         StringBuilder url = new StringBuilder(apiUrl + "/projects/" + projectCode + "/process-instances");
         url.append("?pageNo=").append(pageNo);
         url.append("&pageSize=").append(pageSize);
@@ -216,16 +240,16 @@ public class DolphinSchedulerApiClient {
         if (stateType != null && !stateType.isEmpty()) {
             url.append("&stateType=").append(stateType);
         }
-        return doGet(url.toString());
+        return parseResponse(doGet(url.toString()), RESP_PAGE_PROCESS_INST);
     }
 
     /**
      * 查询工作流实例详情
      * GET /projects/{projectCode}/process-instances/{id}
      */
-    public String processInstanceDetail(int instanceId) throws IOException {
+    public DolphinSchedulerResponse<ProcessInstance> processInstanceDetail(int instanceId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-instances/" + instanceId;
-        return doGet(url);
+        return parseResponse(doGet(url), RESP_PROCESS_INST);
     }
 
     /**
@@ -233,52 +257,51 @@ public class DolphinSchedulerApiClient {
      * POST /projects/{projectCode}/executors/execute
      * executeType: STOP / RECOVER_TOLERANCE / RECOVER_SUSPEND / PAUSE 等
      */
-    public String executeProcessInstance(int instanceId, String executeType) throws IOException {
+    public DolphinSchedulerResponse<Void> executeProcessInstance(int instanceId, String executeType) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/executors/execute";
         Map<String, String> params = new LinkedHashMap<>();
         params.put("processInstanceId", String.valueOf(instanceId));
         params.put("executeType", executeType);
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_VOID);
     }
 
     /**
      * 删除工作流实例
      * DELETE /projects/{projectCode}/process-instances/{id}
      */
-    public String deleteProcessInstance(int instanceId) throws IOException {
+    public DolphinSchedulerResponse<Void> deleteProcessInstance(int instanceId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/process-instances/" + instanceId;
-        return doDelete(url);
+        return parseResponse(doDelete(url), RESP_VOID);
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Task & 其他
+    // 4. Task & 其他
 
     /**
-     * 生成 Task Code。
+     * 生成 Task Code
      * GET /projects/{projectCode}/task-definition/gen-task-codes?genNum=1
      * @return 生成的 task code 列表
      */
-    public String genTaskCodes(int genNum) throws IOException {
+    public DolphinSchedulerResponse<List<Long>> genTaskCodes(int genNum) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/task-definition/gen-task-codes?genNum=" + genNum;
-        return doGet(url);
+        return parseResponse(doGet(url), RESP_LONG_LIST);
     }
 
-    // Task
-    // TODO
-    public String createTask(String workflowCode) throws IOException {
+    // Task TODO
+    public DolphinSchedulerResponse<Void> createTask(String workflowCode) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/task-definition";
         Map<String, String> params = new HashMap<>();
         params.put("taskDefinitionJson", "");
-        return doPostForm(url, params);
+        return parseResponse(doPostForm(url, params), RESP_VOID);
     }
 
     /**
-     * 测试连通性。
+     * 测试连通性
      */
-    public String testConnection() throws IOException {
+    public DolphinSchedulerResponse<Map<String, Object>> testConnection() throws IOException {
         String baseUrl = apiUrl.replaceAll("/dolphinscheduler.*", "");
         String healthUrl = baseUrl + "/dolphinscheduler/actuator/health";
-        return doGetNoAuth(healthUrl);
+        return parseResponse(doGetNoAuth(healthUrl), RESP_MAP);
     }
 
     // -----------------------------------------------------------------------------------------------------------------

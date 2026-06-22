@@ -1,6 +1,7 @@
 package com.data.example.controller;
 
 import com.data.example.bean.DolphinSchedulerResponse;
+import com.data.example.bean.Schedule;
 import com.data.example.service.ScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * 功能：调度示例
@@ -26,20 +28,10 @@ public class ScheduleController {
 
     /**
      * 创建定时调度
-     * POST /api/workflow/{workflowCode}/schedule
-     *
-     * 请求参数 scheduleJson 示例：
-     * <pre>
-     * {
-     *   "startTime": "2026-01-01 00:00:00",
-     *   "endTime": "2099-12-31 23:59:59",
-     *   "crontab": "0 0 2 * * ? *",
-     *   "timezoneId": "Asia/Shanghai"
-     * }
-     * </pre>
+     * POST /api/schedule/{workflowCode}
      */
     @PostMapping("/{workflowCode}")
-    public ResponseEntity<DolphinSchedulerResponse<?>> createSchedule(
+    public ResponseEntity<DolphinSchedulerResponse<Schedule>> createSchedule(
             @PathVariable String workflowCode,
             @RequestBody String scheduleJson) throws IOException {
         log.info("请求为 [{}] 工作流创建定时调度: {}", workflowCode, scheduleJson);
@@ -48,28 +40,28 @@ public class ScheduleController {
 
     // 所有调度
     @GetMapping("/list")
-    public ResponseEntity<DolphinSchedulerResponse<?>> listSchedules() throws IOException {
+    public ResponseEntity<DolphinSchedulerResponse<List<Schedule>>> listSchedules() throws IOException {
         log.info("请求所有定时调度");
         return ResponseEntity.ok(scheduleService.listSchedules());
     }
 
     // 上线调度
     @PostMapping("/{scheduleId}/online")
-    public ResponseEntity<DolphinSchedulerResponse<?>> onlineSchedule(
+    public ResponseEntity<DolphinSchedulerResponse<Void>> onlineSchedule(
             @PathVariable String scheduleId) throws IOException {
         return ResponseEntity.ok(scheduleService.onlineSchedule(scheduleId));
     }
 
     // 下线调度
     @PostMapping("/{scheduleId}/offline")
-    public ResponseEntity<DolphinSchedulerResponse<?>> offlineSchedule(
+    public ResponseEntity<DolphinSchedulerResponse<Void>> offlineSchedule(
             @PathVariable String scheduleId) throws IOException {
         return ResponseEntity.ok(scheduleService.offlineSchedule(scheduleId));
     }
 
     // 删除调度
     @DeleteMapping("/{scheduleId}")
-    public ResponseEntity<DolphinSchedulerResponse<?>> deleteSchedule(@PathVariable String scheduleId) throws IOException {
+    public ResponseEntity<DolphinSchedulerResponse<Void>> deleteSchedule(@PathVariable String scheduleId) throws IOException {
         return ResponseEntity.ok(scheduleService.deleteSchedule(scheduleId));
     }
 }

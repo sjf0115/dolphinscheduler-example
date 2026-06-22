@@ -6,20 +6,20 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 功能：工作流实例
+ * 功能：定时调度
  * 作者：@SmartSi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
- * 日期：2026/6/14 16:27
+ * 日期：2026/6/21
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ProcessInstance {
+public class Schedule {
     private Integer id;
-    private String name;
     private Long processDefinitionCode;
-    private String state; // SUCCESS / FAILURE / RUNNING / STOP
-    private Date startTime;
-    private Date endTime;
-    private Integer commandType;
+    private String processDefinitionName;
+    private String schedule;
+    private String releaseState; // ONLINE / OFFLINE
+    private Date createTime;
+    private Date updateTime;
 }

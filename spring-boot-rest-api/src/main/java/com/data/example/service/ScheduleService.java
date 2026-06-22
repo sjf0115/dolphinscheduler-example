@@ -1,16 +1,16 @@
 package com.data.example.service;
 
 import com.data.example.bean.DolphinSchedulerResponse;
+import com.data.example.bean.Schedule;
 import com.data.example.client.DolphinSchedulerApiClient;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.List;
 
-import static com.data.example.utils.CommonUtil.parseResponse;
+import static com.data.example.utils.CommonUtil.toJson;
 
 /**
  * 功能：调度服务
@@ -28,45 +28,45 @@ public class ScheduleService {
     /**
      * 创建定时调度
      */
-    public DolphinSchedulerResponse<?> createSchedule(String workflowCode, String scheduleJson) throws IOException {
-        String response = client.createSchedule(workflowCode, scheduleJson);
-        log.info("为 [{}] 工作流创建定时调度: {}", workflowCode, response);
-        return parseResponse(response);
+    public DolphinSchedulerResponse<Schedule> createSchedule(String workflowCode, String scheduleJson) throws IOException {
+        DolphinSchedulerResponse<Schedule> response = client.createSchedule(workflowCode, scheduleJson);
+        log.info("为 [{}] 工作流创建定时调度: {}", workflowCode, toJson(response));
+        return response;
     }
 
     /**
      * 所有调度
      */
-    public DolphinSchedulerResponse<?> listSchedules() throws IOException {
-        String response = client.listSchedules();
-        log.info("所有定时调度: {}", response);
-        return parseResponse(response);
+    public DolphinSchedulerResponse<List<Schedule>> listSchedules() throws IOException {
+        DolphinSchedulerResponse<List<Schedule>> response = client.listSchedules();
+        log.info("所有定时调度: {}", toJson(response));
+        return response;
     }
 
     /**
      * 上线调度
      */
-    public DolphinSchedulerResponse<?> onlineSchedule(String scheduleId) throws IOException {
-        String response = client.onlineSchedule(scheduleId);
-        log.info("上线 [{}] 调度: {}", scheduleId, response);
-        return parseResponse(response);
+    public DolphinSchedulerResponse<Void> onlineSchedule(String scheduleId) throws IOException {
+        DolphinSchedulerResponse<Void> response = client.onlineSchedule(scheduleId);
+        log.info("上线 [{}] 调度: {}", scheduleId, toJson(response));
+        return response;
     }
 
     /**
      * 下线调度
      */
-    public DolphinSchedulerResponse<?> offlineSchedule(String scheduleId) throws IOException {
-        String response = client.offlineSchedule(scheduleId);
-        log.info("下线 [{}] 调度: {}", scheduleId, response);
-        return parseResponse(response);
+    public DolphinSchedulerResponse<Void> offlineSchedule(String scheduleId) throws IOException {
+        DolphinSchedulerResponse<Void> response = client.offlineSchedule(scheduleId);
+        log.info("下线 [{}] 调度: {}", scheduleId, toJson(response));
+        return response;
     }
 
     /**
      * 删除调度
      */
-    public DolphinSchedulerResponse<?> deleteSchedule(String scheduleId) throws IOException {
-        String response = client.deleteSchedule(scheduleId);
-        log.info("删除 [{}] 调度: {}", scheduleId, response);
-        return parseResponse(response);
+    public DolphinSchedulerResponse<Void> deleteSchedule(String scheduleId) throws IOException {
+        DolphinSchedulerResponse<Void> response = client.deleteSchedule(scheduleId);
+        log.info("删除 [{}] 调度: {}", scheduleId, toJson(response));
+        return response;
     }
 }
